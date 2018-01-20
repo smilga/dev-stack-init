@@ -1,8 +1,29 @@
-* First
-** Second
-*** Third
-	
-[[./master/screenshots/menu.png?raw=true]]
+* dev-stack-installe
+  There is work in progress!
+  For debian distros!
+  Lets you choose from multiple options:
+  PHP-sdk
+  GO-sdk
+  JS-sdk
+  Nginx server
+  Redis server
+  Mysql server
+  Elasticsearch server
+  Emacs editor
+  Other ( git, firefox-quantum-dev edition, unrar)
+** Get started
+   1. Clone repo git clone 
+	#+BEGIN_SRC sh
+	git clone https://github.com/smilga/dev-stack-installer
+	#+END_SRC
+   2. Run install.sh as roo
+	#+BEGIN_SRC sh
+	sudo ./install.sh
+	#+END_SRC
+   3. Choose options and set up
 
-#+ATTR_HTML: :style margin-left: auto; margin-right: auto;
-[[/screenshots/menu.png]]
+
+
+
+
+

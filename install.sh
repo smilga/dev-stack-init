@@ -15,7 +15,7 @@ MODULE_REDIS=("Redis" false)
 MODULE_MYSQL=("Mysql" false)
 MODULE_ELASTIC=("Elasticsearch" false)
 MODULE_EMACS=("Emacs (emacs, silversearcher-ag)" false)
-MODULE_OTHER=("Other (git, firefox, urar)", false)
+MODULE_OTHER=("Other (git, firefox, urnar)", false)
 
 CONFIGURE_HOSTS=("Set up nginx virtual hosts", false)
 
