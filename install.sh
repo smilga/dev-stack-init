@@ -1,18 +1,25 @@
 #!/bin/bash
 
 ###########################################################
-###########################################################
+#
 # Bash script to set up php, js, go dev enviroment
-###########################################################
+#
 ###########################################################
 
 # Define install modules
-MODULE_PHP=("PHP dev enviroment (php, composer)" false)
-MODULE_GO=("Go dev enviroment (go, tools)" false)
-MODULE_STORAGE=("Storage module (redis, elasticsearch, mysql)" false)
-MODULE_JS=("Javascript dev enviroment (node)" false)
+MODULE_PHP=("PHP-sdk (php, composer)" false)
+MODULE_GO=("Go-sdk (go, go-tools)" false)
+MODULE_JS=("Javascript-sdk (node)" false)
 MODULE_NGINX=("Nginx server" false)
-INSTALL="Proceed selected modules"
+MODULE_REDIS=("Redis" false)
+MODULE_MYSQL=("Mysql" false)
+MODULE_ELASTIC=("Elasticsearch" false)
+MODULE_EMACS=("Emacs (emacs, silversearcher-ag)" false)
+MODULE_OTHER=("Other (git, firefox, urar)", false)
+
+CONFIGURE_HOSTS=("Set up nginx virtual hosts", false)
+
+INSTALL="Proceed selected options"
 
 # Draws screen with selected modules
 draw() {
@@ -20,8 +27,15 @@ draw() {
 	echo "Choose install options:"
 	echo "1 $(printC "${MODULE_PHP[@]}")"  
 	echo "2 $(printC "${MODULE_GO[@]}")"  
-	echo "3 $(printC "${MODULE_STORAGE[@]}")"  
-	echo "4 $(printC "${MODULE_JS[@]}")"  
+	echo "3 $(printC "${MODULE_JS[@]}")"  
+	echo "4 $(printC "${MODULE_NGINX[@]}")"  
+	echo "5 $(printC "${MODULE_REDIS[@]}")"  
+	echo "6 $(printC "${MODULE_MYSQL[@]}")"  
+	echo "7 $(printC "${MODULE_ELASTIC[@]}")"  
+	echo "8 $(printC "${MODULE_EMACS[@]}")"  
+	echo "9 $(printC "${MODULE_OTHER[@]}")"  
+	echo "c $(printC "${CONFIGURE_HOSTS[@]}")"  
+
 	echo -e "\n"
 	echo "0 $INSTALL"
 }
@@ -35,14 +49,14 @@ printYellow() { echo -e "\e[33m$1\n1\e[39m"; }
 function printC() {
 	arr=("$@")
 	if [ "${arr[1]}" == false ]; then
-		echo $(printGray "${arr[0]}")
+			echo $(printGray "${arr[0]}")
 	else
 		echo $(printGreen "${arr[0]}")
 	fi
 }
 
 # Changes module state
-function toggle() {
+toggle() {
 	if [ "$1" == false ]; then
 		echo true
 	else
@@ -60,90 +74,177 @@ do
     case $SEL in
         1) MODULE_PHP[1]=$(toggle "${MODULE_PHP[1]}") ;;
         2) MODULE_GO[1]=$(toggle "${MODULE_GO[1]}") ;;
-        3) MODULE_STORAGE[1]=$(toggle "${MODULE_STORAGE[1]}") ;;
-        4) MODULE_JS[1]=$(toggle "${MODULE_JS[1]}") ;;
+        3) MODULE_JS[1]=$(toggle "${MODULE_JS[1]}") ;;
+        4) MODULE_NGINX[1]=$(toggle "${MODULE_NGINX[1]}") ;;
+        5) MODULE_REDIS[1]=$(toggle "${MODULE_REDIS[1]}") ;;
+        6) MODULE_MYSQL[1]=$(toggle "${MODULE_MYSQL[1]}") ;;
+        7) MODULE_ELASTIC[1]=$(toggle "${MODULE_ELASTIC[1]}") ;;
+        8) MODULE_EMACS[1]=$(toggle "${MODULE_EMACS[1]}") ;;
+        9) MODULE_OTHER[1]=$(toggle "${MODULE_OTHER[1]}") ;;
+        c) CONFIGURE_HOSTS[1]=$(toggle "${CONFIGURE_HOSTS[1]}") ;;
         0) echo -e "\n"; break  ;;
         *) echo "Invalid option" ;;
     esac
 done
 
 ###########################################################
-
 # Updating and dependencies
-
 ###########################################################
 # echo $(printYellow "Updating apt list and upgrading system")
 # sudo apt-get update -y
 # sudo apt-get upgrade -y
 # sudo apt-get install build-essential -y
 ###########################################################
-
 # PHP module
- 
 ###########################################################
 if [ "${MODULE_PHP[1]}" == true ]; then
 	echo $(printYellow "Processing PHP module")
 	sudo add-apt-repository ppa:ondrej/php -y
 	sudo apt-get install php7.1 php7.1-bcmath php7.1-bz2 php7.1-fpm php7.1-cli php7.1-curl php7.1-gd php7.1-imap php7.1-intl php7.1-json php7.1-mbstring php7.1-mcrypt php7.1-mysql php7.1-xml php7.1-zip -y
 	sudo apt-get install composer -y
-	#TODO set compser paths 
+	# Add path 
+	echo 'export PATH="$PATH:$HOME/.composer/vendor/bin"' >> ~/.bashrc
 fi
 ###########################################################
-
-# Nginx module
- 
+# GO module
 ###########################################################
 if [ "${MODULE_NGINX[1]}" == true ]; then
-	echo $(printYellow "Processing nginx module")
-	sudo apt-get install nginx -y
-	#TODO configure
+	echo $(printYellow "Processing go module")
+	sudo add-apt-repository ppa:gophers/archive -y
+	sudo apt-get update -y
+	sudo apt-get install golang-1.9-go -y
+	#TODO install tools etc
 fi
 ###########################################################
-
-# Storage module
- 
-###########################################################
-if [ "${MODULE_STORAGE[1]}" == true ]; then
-	echo $(printYellow "Processing storage module")
-	# elasticsaerch
-	wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
-	echo "deb https://artifacts.elastic.co/packages/6.x/apt stable main" | tee -a /etc/apt/sources.list.d/elastic-6.x.list
-	sudo apt-get update && sudo apt-get install elasticsearch -y
-	# mysql
-	sudo apt-get install mysql-server -y
-	# redis
-	sudo apt-get install redis-server -y
-fi
-###########################################################
-
 # Javascript module
- 
 ###########################################################
 if [ "${MODULE_JS[1]}" == true ]; then
 	echo $(printYellow "Processing javscript module")
 	curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
 	sudo apt-get install -y nodejs
-	#TODO configure node modules to user 
+	# Move global modules to user path
+	npm config set prefix ~/npm
+	echo 'export PATH="$PATH:$HOME/npm/bin"' >> ~/.bashrc
+	echo 'export NODE_PATH="$NODE_PATH:$HOME/npm/lib/node_modules"' >> ~/.bashrc
 fi
+###########################################################
+# Nginx module
+###########################################################
+if [ "${MODULE_NGINX[1]}" == true ]; then
+	echo $(printYellow "Processing nginx module")
+	sudo apt-get install nginx -y
+fi
+###########################################################
+# Redis module
+###########################################################
+if [ "${MODULE_REDIS[1]}" == true ]; then
+	echo $(printYellow "Installing redis")
+	sudo apt-get install redis-server -y
+fi
+###########################################################
+# Mysal module
+###########################################################
+if [ "${MODULE_MYSQL[1]}" == true ]; then
+	echo $(printYellow "Installing mysql")
+	sudo apt-get install mysql-server -y
+fi
+###########################################################
+# Elasticsearch module
+###########################################################
+if [ "${MODULE_ELASTIC[1]}" == true ]; then
+	echo $(printYellow "Installing elasticsearh")
+	wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+	echo "deb https://artifacts.elastic.co/packages/6.x/apt stable main" | tee -a /etc/apt/sources.list.d/elastic-6.x.list
+	sudo apt-get update && sudo apt-get install elasticsearch -y
+fi
+###########################################################
+# Other apps module
+###########################################################
+if [ "${MODULE_EMACS[1]}" == true ]; then
+	echo $(printYellow "Installing other apps")
+	sudo apt-get install unrar -y
+	sudo apt-get install git -y
+	#TODO ask for git user name and email and set up
+	# firefox quantum
+	sudo add-apt-repository ppa:ubuntu-mozilla-daily/firefox-aurora -y
+	sudo apt-get update -y
+	sudo apt-get install firefox -y
+fi
+###########################################################
+# Emacs module
+###########################################################
+if [ "${MODULE_EMACS[1]}" == true ]; then
+	echo $(printYellow "Installing emacs")
+	sudo add-apt-repository ppa:ubuntu-elisp/ppa -y
+	sudo apt-get update -y
+	sudo apt-get install emacs25 -y
+	sudo apt-get install silversearcher-ag -y
+fi
+###########################################################
+# Configure hosts
+###########################################################
+if [ "${CONFIGURE_HOSTS[1]}" == true ]; then
+	echo "Enter domain and project path - [ example /home/username/example ]"
+	read domain path
+	block="/etc/nginx/sites-available/$domain"
+	echo "$domain"
+	echo "$path"
+	# Create the Nginx server block file:
 
+	cat > $block.conf <<EOF
+server {
+		listen 80;
+		listen [::]:80;
 
-#TODO
-# Install golang and add paths
-# Add composer bin to path
-# Change node modules no user space
+		root $path/public;
+        index index.php index.html index.htm;
 
-# Configure redis and elastic not to start by default
+		server_name $domain.local;
 
-# generate ssh key
+        location / {
+                try_files $uri $uri/ /index.php?$query_string;
+        }
+        location ~ \.php$ {
+                try_files $uri =404;
+                fastcgi_split_path_info ^(.+\.php)(/.+)$;
+                fastcgi_pass unix:/var/run/php/php7.1-fpm.sock;
+                fastcgi_index index.php;
+                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                include fastcgi_params;
+        }
+}
 
-# emacs
-# silversearcher-ag
-# zsh
-# vlc
-# slack-desktop
-# openssh-server
-# firefox
-# chrome
-# composer
-# cmake
-# unrar
+server {
+        listen 443 ssl;
+
+		root $path/public;
+        index index.php index.html index.htm;
+
+		server_name $domain.local;
+
+        #ssl_certificate /etc/ssl/#domain.crt;
+        #ssl_certificate_key /etc/ssl/#domain.key;
+
+        location / {
+                try_files $uri $uri/ /index.php?$query_string;
+        }
+
+        location ~ \.php$ {
+                try_files $uri =404;
+                fastcgi_split_path_info ^(.+\.php)(/.+)$;
+                fastcgi_pass unix:/var/run/php/php7.1-fpm.sock;
+                fastcgi_index index.php;
+                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                include fastcgi_params;
+        }
+}
+
+EOF
+fi
+# Link to make it available
+sudo ln -s $block /etc/nginx/sites-enabled/
+# Test configuration and reload if successful
+sudo nginx -t && sudo service nginx reload
+
+# Source bashrc to get all working
+source ~/.bashrc
