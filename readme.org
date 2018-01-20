@@ -1,4 +1,4 @@
-* dev-stack-installe
+* dev-stack-installer
   There is work in progress!
   For debian distros!
   Lets you choose from multiple options:
@@ -11,6 +11,8 @@
   Elasticsearch server
   Emacs editor
   Other ( git, firefox-quantum-dev edition, unrar)
+  #+ATTR_HTML: :style margin-left: auto; margin-right: auto;
+  [[/screenshots/menu.png]]
 ** Get started
    1. Clone repo git clone 
 	#+BEGIN_SRC sh
