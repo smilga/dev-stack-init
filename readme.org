@@ -3,3 +3,6 @@
 *** Third
 	
 [[./master/screenshots/menu.png?raw=true]]
+
+#+ATTR_HTML: :style margin-left: auto; margin-right: auto;
+[[/screenshots/menu.png]]
