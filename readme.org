@@ -1,16 +1,16 @@
 * dev-stack-installer
-  There is work in progress!
-  For debian distros!
-  Lets you choose from multiple options:
-  PHP-sdk
-  GO-sdk
-  JS-sdk
-  Nginx server
-  Redis server
-  Mysql server
-  Elasticsearch server
-  Emacs editor
-  Other ( git, firefox-quantum-dev edition, unrar)
+  For debian based distros!
+  This script automates setting up development enviroment from third ppa`s or official packages and configuration.
+  Choose what to set up:
+  - PHP-SDK (php7.1, modules, composer)
+  - GO-SDK (golang and tools)
+  - JS-SDK (nodejs)
+  - Nginx
+  - Redis
+  - Mysql
+  - Elasticsearch
+  - Emacs editor (emacs, silversearcher)
+  - Other (git, firefox-quantum-dev)
   #+ATTR_HTML: :style margin-left: auto; margin-right: auto;
   [[/screenshots/menu.png]]
 ** Get started
@@ -23,8 +23,7 @@
 	sudo ./install.sh
 	#+END_SRC
    3. Choose options and set up
-
-
+	  
 
 
 

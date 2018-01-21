@@ -7,24 +7,24 @@
 ###########################################################
 
 # Define install modules
-MODULE_PHP=("PHP-sdk (php, composer)" false)
-MODULE_GO=("Go-sdk (go, go-tools)" false)
-MODULE_JS=("Javascript-sdk (node)" false)
-MODULE_NGINX=("Nginx server" false)
+MODULE_PHP=("PHP SDK (php-7.1, php modules, composer)" false)
+MODULE_GO=("Go SDK (go1.9.2, go-tools)" false)
+MODULE_JS=("Javascript SDK (nodejs)" false)
+MODULE_NGINX=("Nginx" false)
 MODULE_REDIS=("Redis" false)
 MODULE_MYSQL=("Mysql" false)
 MODULE_ELASTIC=("Elasticsearch" false)
 MODULE_EMACS=("Emacs (emacs, silversearcher-ag)" false)
-MODULE_OTHER=("Other (git, firefox, urnar)", false)
+MODULE_OTHER=("Other (git, firefox-quantum-dev)" false)
 
-CONFIGURE_HOSTS=("Set up nginx virtual hosts", false)
+CONFIGURE_HOSTS=("Set up nginx virtual hosts" false)
 
 INSTALL="Proceed selected options"
 
 # Draws screen with selected modules
 draw() {
 	clear
-	echo "Choose install options:"
+	echo -e "Choose install options:\n"
 	echo "1 $(printC "${MODULE_PHP[@]}")"  
 	echo "2 $(printC "${MODULE_GO[@]}")"  
 	echo "3 $(printC "${MODULE_JS[@]}")"  
@@ -34,8 +34,8 @@ draw() {
 	echo "7 $(printC "${MODULE_ELASTIC[@]}")"  
 	echo "8 $(printC "${MODULE_EMACS[@]}")"  
 	echo "9 $(printC "${MODULE_OTHER[@]}")"  
+	echo -e "\n"
 	echo "c $(printC "${CONFIGURE_HOSTS[@]}")"  
-
 	echo -e "\n"
 	echo "0 $INSTALL"
 }
@@ -86,20 +86,36 @@ do
         *) echo "Invalid option" ;;
     esac
 done
-
 ###########################################################
-# Updating and dependencies
+#
+# Add ppa`s and udpate list
+#
 ###########################################################
-# echo $(printYellow "Updating apt list and upgrading system")
-# sudo apt-get update -y
-# sudo apt-get upgrade -y
-# sudo apt-get install build-essential -y
+echo $(printYellow "Updating apt list and upgrading system")
+if [ "${MODULE_PHP[1]}" == true ]; then
+	sudo add-apt-repository ppa:ondrej/php -y
+fi
+if [ "${MODULE_ELASTIC[1]}" == true ]; then
+	wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+	echo "deb https://artifacts.elastic.co/packages/6.x/apt stable main" | tee -a /etc/apt/sources.list.d/elastic-6.x.list
+fi
+if [ "${MODULE_EMACS[1]}" == true ]; then
+	sudo add-apt-repository ppa:ubuntu-elisp/ppa -y
+fi
+if [ "${MODULE_OTHER[1]}" == true ]; then
+	sudo add-apt-repository ppa:ubuntu-mozilla-daily/firefox-aurora -y
+fi
+sudo apt-get update -y
+sudo apt-get upgrade -y
+# Other dependeicies
+sudo apt-get install build-essential -y
 ###########################################################
+# 
 # PHP module
+#
 ###########################################################
 if [ "${MODULE_PHP[1]}" == true ]; then
-	echo $(printYellow "Processing PHP module")
-	sudo add-apt-repository ppa:ondrej/php -y
+	echo $(printYellow "Setting up PHP SDK")
 	sudo apt-get install php7.1 php7.1-bcmath php7.1-bz2 php7.1-fpm php7.1-cli php7.1-curl php7.1-gd php7.1-imap php7.1-intl php7.1-json php7.1-mbstring php7.1-mcrypt php7.1-mysql php7.1-xml php7.1-zip -y
 	sudo apt-get install composer -y
 	# Add path 
@@ -108,18 +124,19 @@ fi
 ###########################################################
 # GO module
 ###########################################################
-if [ "${MODULE_NGINX[1]}" == true ]; then
-	echo $(printYellow "Processing go module")
-	sudo add-apt-repository ppa:gophers/archive -y
-	sudo apt-get update -y
-	sudo apt-get install golang-1.9-go -y
+if [ "${MODULE_GO[1]}" == true ]; then
+	echo $(printYellow "Setting up Go SDK")
+	wget https://storage.googleapis.com/golang/go1.9.2.linux-amd64.tar.gz -O golang.tar.gz
+	sudo tar -C /usr/local -xzf go1.9.2.linux-amd64.tar.gz
+	echo 'export PATH="$PATH:/usr/local/go/bin"' >> ~/.bashrc
+	rm golang.tar.gz
 	#TODO install tools etc
 fi
 ###########################################################
 # Javascript module
 ###########################################################
 if [ "${MODULE_JS[1]}" == true ]; then
-	echo $(printYellow "Processing javscript module")
+	echo $(printYellow "Setting up Javscript SDK")
 	curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
 	sudo apt-get install -y nodejs
 	# Move global modules to user path
@@ -153,21 +170,16 @@ fi
 ###########################################################
 if [ "${MODULE_ELASTIC[1]}" == true ]; then
 	echo $(printYellow "Installing elasticsearh")
-	wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
-	echo "deb https://artifacts.elastic.co/packages/6.x/apt stable main" | tee -a /etc/apt/sources.list.d/elastic-6.x.list
-	sudo apt-get update && sudo apt-get install elasticsearch -y
+	sudo apt-get install elasticsearch -y
 fi
 ###########################################################
 # Other apps module
 ###########################################################
-if [ "${MODULE_EMACS[1]}" == true ]; then
+if [ "${MODULE_OTHER[1]}" == true ]; then
 	echo $(printYellow "Installing other apps")
-	sudo apt-get install unrar -y
 	sudo apt-get install git -y
 	#TODO ask for git user name and email and set up
 	# firefox quantum
-	sudo add-apt-repository ppa:ubuntu-mozilla-daily/firefox-aurora -y
-	sudo apt-get update -y
 	sudo apt-get install firefox -y
 fi
 ###########################################################
@@ -175,8 +187,6 @@ fi
 ###########################################################
 if [ "${MODULE_EMACS[1]}" == true ]; then
 	echo $(printYellow "Installing emacs")
-	sudo add-apt-repository ppa:ubuntu-elisp/ppa -y
-	sudo apt-get update -y
 	sudo apt-get install emacs25 -y
 	sudo apt-get install silversearcher-ag -y
 fi
@@ -240,11 +250,10 @@ server {
 }
 
 EOF
-fi
 # Link to make it available
 sudo ln -s $block /etc/nginx/sites-enabled/
 # Test configuration and reload if successful
 sudo nginx -t && sudo service nginx reload
-
+fi
 # Source bashrc to get all working
 source ~/.bashrc
