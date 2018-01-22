@@ -8,23 +8,22 @@
 
 # Define install modules
 MODULE_PHP=("PHP SDK (php-7.1, php modules, composer)" false)
-MODULE_GO=("Go SDK (go1.9.2, go-tools)" false)
+MODULE_GO=("Go SDK (go-1.9.2, go-tools)" false)
 MODULE_JS=("Javascript SDK (nodejs)" false)
 MODULE_NGINX=("Nginx" false)
 MODULE_REDIS=("Redis" false)
 MODULE_MYSQL=("Mysql" false)
-MODULE_ELASTIC=("Elasticsearch" false)
-MODULE_EMACS=("Emacs (emacs, silversearcher-ag)" false)
+MODULE_ELASTIC=("Elasticsearch 6.x" false)
+MODULE_EMACS=("Emacs (emacs 25, silversearcher-ag)" false)
 MODULE_OTHER=("Other (git, firefox-quantum-dev)" false)
 
 CONFIGURE_HOSTS=("Set up nginx virtual hosts" false)
 
-INSTALL="Proceed selected options"
-
 # Draws screen with selected modules
 draw() {
 	clear
-	echo -e "Choose install options:\n"
+	echo -e "Choose install options:"
+	echo "---------------------------------------------"
 	echo "1 $(printC "${MODULE_PHP[@]}")"  
 	echo "2 $(printC "${MODULE_GO[@]}")"  
 	echo "3 $(printC "${MODULE_JS[@]}")"  
@@ -34,10 +33,8 @@ draw() {
 	echo "7 $(printC "${MODULE_ELASTIC[@]}")"  
 	echo "8 $(printC "${MODULE_EMACS[@]}")"  
 	echo "9 $(printC "${MODULE_OTHER[@]}")"  
-	echo -e "\n"
+	echo "---------------------------------------------"
 	echo "c $(printC "${CONFIGURE_HOSTS[@]}")"  
-	echo -e "\n"
-	echo "0 $INSTALL"
 }
 
 # Returns colored output 
@@ -82,7 +79,7 @@ do
         8) MODULE_EMACS[1]=$(toggle "${MODULE_EMACS[1]}") ;;
         9) MODULE_OTHER[1]=$(toggle "${MODULE_OTHER[1]}") ;;
         c) CONFIGURE_HOSTS[1]=$(toggle "${CONFIGURE_HOSTS[1]}") ;;
-        0) echo -e "\n"; break  ;;
+        "") break  ;;
         *) echo "Invalid option" ;;
     esac
 done
@@ -91,24 +88,30 @@ done
 # Add ppa`s and udpate list
 #
 ###########################################################
-echo $(printYellow "Updating apt list and upgrading system")
+UPDATE=false
 if [ "${MODULE_PHP[1]}" == true ]; then
+	UPDATE=true
 	sudo add-apt-repository ppa:ondrej/php -y
 fi
 if [ "${MODULE_ELASTIC[1]}" == true ]; then
+	UPDATE=true
+	sudo apt-get install build-essential -y
 	wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
 	echo "deb https://artifacts.elastic.co/packages/6.x/apt stable main" | tee -a /etc/apt/sources.list.d/elastic-6.x.list
 fi
 if [ "${MODULE_EMACS[1]}" == true ]; then
+	UPDATE=true
 	sudo add-apt-repository ppa:ubuntu-elisp/ppa -y
 fi
 if [ "${MODULE_OTHER[1]}" == true ]; then
+	UPDATE=true
 	sudo add-apt-repository ppa:ubuntu-mozilla-daily/firefox-aurora -y
 fi
-sudo apt-get update -y
-sudo apt-get upgrade -y
-# Other dependeicies
-sudo apt-get install build-essential -y
+if [ UPDATE == true ]; then
+	echo $(printYellow "Updating apt list and upgrading system")
+	sudo apt-get update -y
+	sudo apt-get upgrade -y
+fi
 ###########################################################
 # 
 # PHP module
@@ -126,10 +129,10 @@ fi
 ###########################################################
 if [ "${MODULE_GO[1]}" == true ]; then
 	echo $(printYellow "Setting up Go SDK")
-	wget https://storage.googleapis.com/golang/go1.9.2.linux-amd64.tar.gz -O golang.tar.gz
+	wget https://storage.googleapis.com/golang/go1.9.2.linux-amd64.tar.gz
 	sudo tar -C /usr/local -xzf go1.9.2.linux-amd64.tar.gz
 	echo 'export PATH="$PATH:/usr/local/go/bin"' >> ~/.bashrc
-	rm golang.tar.gz
+	rm go1.9.2.linux-amd64.tar.gz
 	#TODO install tools etc
 fi
 ###########################################################
@@ -199,9 +202,36 @@ if [ "${CONFIGURE_HOSTS[1]}" == true ]; then
 	block="/etc/nginx/sites-available/$domain"
 	echo "$domain"
 	echo "$path"
-	# Create the Nginx server block file:
+	# Create ssl ceritficate
+	openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout /etc/ssl/${domain}.key -out /etc/ssl/${domain}.crt -config <(
+	cat <<EOF
+[req]
+default_bits = 2048
+prompt = no
+default_md = sha256
+distinguished_name = dn
+x509_extensions = v3_ca
 
-	cat > $block.conf <<EOF
+[ dn ]
+C=US
+ST=New York
+L=Rochester
+O=End Point
+OU=$domain
+emailAddress=example@$domain.com
+CN = www.$domain.local
+
+[v3_ca]
+subjectAltName = @alt_names
+
+[ alt_names ]
+DNS.1 = $domain.local
+DNS.2 = www.$domain.local
+EOF
+	)
+
+# Create the Nginx server block file:
+	cat > $block.local <<EOF
 server {
 		listen 80;
 		listen [::]:80;
@@ -212,14 +242,14 @@ server {
 		server_name $domain.local;
 
         location / {
-                try_files $uri $uri/ /index.php?$query_string;
+                try_files \$uri \$uri/ /index.php?\$query_string;
         }
         location ~ \.php$ {
-                try_files $uri =404;
+                try_files \$uri =404;
                 fastcgi_split_path_info ^(.+\.php)(/.+)$;
                 fastcgi_pass unix:/var/run/php/php7.1-fpm.sock;
                 fastcgi_index index.php;
-                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
                 include fastcgi_params;
         }
 }
@@ -232,26 +262,26 @@ server {
 
 		server_name $domain.local;
 
-        #ssl_certificate /etc/ssl/#domain.crt;
-        #ssl_certificate_key /etc/ssl/#domain.key;
+        ssl_certificate /etc/ssl/$domain.crt;
+        ssl_certificate_key /etc/ssl/$domain.key;
 
         location / {
-                try_files $uri $uri/ /index.php?$query_string;
+                try_files \$uri \$uri/ /index.php?\$query_string;
         }
 
         location ~ \.php$ {
-                try_files $uri =404;
+                try_files \$uri =404;
                 fastcgi_split_path_info ^(.+\.php)(/.+)$;
                 fastcgi_pass unix:/var/run/php/php7.1-fpm.sock;
                 fastcgi_index index.php;
-                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
                 include fastcgi_params;
         }
 }
 
 EOF
 # Link to make it available
-sudo ln -s $block /etc/nginx/sites-enabled/
+sudo ln -s ${block}.local /etc/nginx/sites-enabled/
 # Test configuration and reload if successful
 sudo nginx -t && sudo service nginx reload
 fi
