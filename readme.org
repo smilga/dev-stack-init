@@ -10,7 +10,6 @@
   - Mysql
   - Elasticsearch
   - Emacs editor (emacs, silversearcher)
-  - Other (git, firefox-quantum-dev)
   #+ATTR_HTML: :style margin-left: auto; margin-right: auto;
   [[/screenshots/menu.png]]
 ** Get started
