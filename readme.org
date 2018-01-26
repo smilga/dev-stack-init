@@ -15,20 +15,18 @@
   [[/screenshots/menu.png]]
 ** Get started
    1. Clone repo git clone
-	#+BEGIN_SRC sh
-	git clone https://github.com/smilga/dev-stack-installer
-	#+END_SRC
+      #+BEGIN_SRC sh
+    git clone https://github.com/smilga/dev-stack-installer
+      #+END_SRC
    2. Set execute permission
-	#+BEGIN_SRC sh
-	chmod +x install.sh
-	#+END_SRC
+      #+BEGIN_SRC sh
+    chmod +x install.sh
+      #+END_SRC
    3. Run install.sh as root
-	#+BEGIN_SRC sh
-	sudo ./install.sh
-	#+END_SRC
+      #+BEGIN_SRC sh
+    sudo ./install.sh
+      #+END_SRC
    4. Choose options and set up
-	  
-
 
 
 
