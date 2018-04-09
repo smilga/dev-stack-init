@@ -17,6 +17,7 @@ MODULE_ELASTIC=("Elasticsearch 6.x" false)
 MODULE_EMACS=("Emacs (emacs 25, silversearcher-ag)" false)
 
 CONFIGURE_HOSTS=("Set up nginx virtual hosts" false)
+CONFIGURE_CERTS=("Create SSL certificate" false)
 
 # Draws screen with selected modules
 draw() {
@@ -33,6 +34,7 @@ draw() {
     echo "8 $(printC "${MODULE_EMACS[@]}")"
     echo "---------------------------------------------"
     echo "c $(printC "${CONFIGURE_HOSTS[@]}")"
+    echo "s $(printC "${CONFIGURE_CERTS[@]}")"
 }
 
 # Returns colored output
@@ -76,6 +78,7 @@ do
         7) MODULE_ELASTIC[1]=$(toggle "${MODULE_ELASTIC[1]}") ;;
         8) MODULE_EMACS[1]=$(toggle "${MODULE_EMACS[1]}") ;;
         c) CONFIGURE_HOSTS[1]=$(toggle "${CONFIGURE_HOSTS[1]}") ;;
+        s) CONFIGURE_CERTS[1]=$(toggle "${CONFIGURE_CERTS[1]}") ;;
         "") break  ;;
         *) echo "Invalid option" ;;
     esac
@@ -177,6 +180,42 @@ if [ "${MODULE_EMACS[1]}" == true ]; then
     sudo apt-get install emacs25 -y
     sudo apt-get install silversearcher-ag -y
 fi
+###########################################################
+# Configure CERT
+###########################################################
+if [ "${CONFIGURE_CERTS[1]}" == true ]; then
+    echo "Enter domain, .local will be added automaticly"
+    read domain
+    echo "$domain"
+    openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout /etc/ssl/${domain}.key -out /etc/ssl/${domain}.crt -config <(
+    cat <<EOF
+[req]
+default_bits = 2048
+prompt = no
+default_md = sha256
+distinguished_name = dn
+x509_extensions = v3_ca
+
+[ dn ]
+C=US
+ST=New York
+L=Rochester
+O=End Point
+OU=$domain
+emailAddress=example@$domain.com
+CN = www.$domain.local
+
+[v3_ca]
+subjectAltName = @alt_names
+
+[ alt_names ]
+DNS.1 = $domain.local
+DNS.2 = www.$domain.local
+EOF
+    )
+fi
+
+echo "ssl cert created /etc/ssl/$domain"
 ###########################################################
 # Configure hosts
 ###########################################################
